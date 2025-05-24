@@ -5,7 +5,7 @@ import LandingPage from './my-app/src/pages/Landingpage/LandingPage';
 
 
 function App(): React.JSX.Element {
-  return <LandingPage/>;
+  return <Companypage/>;
 }
 
 export default App;
