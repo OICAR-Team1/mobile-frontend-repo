@@ -90,7 +90,7 @@ export default function ProjectsPage({ navigation }) {
             style={styles.addButton}
             onPress={() => setShowAddModal(true)}
           >
-            <Text style={styles.addButtonText}>Add project</Text>
+            <Text style={styles.addButtonText}>Dodaj projekt</Text>
           </TouchableOpacity>
         </View>
 
@@ -127,14 +127,14 @@ export default function ProjectsPage({ navigation }) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Project</Text>
+              <Text style={styles.modalTitle}>Dodaj Projekt</Text>
               <Pressable onPress={() => setShowAddModal(false)}>
                 <Text style={styles.closeButton}>&times;</Text>
               </Pressable>
             </View>
             <View style={styles.modalBody}>
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Project name:</Text>
+                <Text style={styles.formLabel}>Naziv projekta:</Text>
                 <TextInput
                   style={styles.formInput}
                   value={newProjectName}
@@ -149,7 +149,7 @@ export default function ProjectsPage({ navigation }) {
                 style={[styles.button, styles.buttonSecondary]}
                 onPress={() => setShowAddModal(false)}
               >
-                <Text style={styles.buttonSecondaryText}>Cancel</Text>
+                <Text style={styles.buttonSecondaryText}>Odustani</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.button}
@@ -164,7 +164,7 @@ export default function ProjectsPage({ navigation }) {
                   }
                 }}
               >
-                <Text style={styles.buttonText}>Add</Text>
+                <Text style={styles.buttonText}>Dodaj</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -183,7 +183,7 @@ export default function ProjectsPage({ navigation }) {
             </View>
             <View style={styles.modalBody}>
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Projektovo ime:</Text>
+                <Text style={styles.formLabel}>Naziv projekta:</Text>
                 <TextInput
                   style={styles.formInput}
                   value={editName}

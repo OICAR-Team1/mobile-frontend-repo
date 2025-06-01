@@ -19,7 +19,7 @@ const NavBar: React.FC<NavBarProps> = ({ currentScreen, navigation }) => (
         }
       >
         <Text style={styles.switchButtonText}>
-          {currentScreen === 'Company' ? 'Go to Projects' : 'Go to Companies'}
+          {currentScreen === 'Company' ? 'Idi na Projekte' : 'Idi na Partnere'}
         </Text>
       </TouchableOpacity>
     </View>

@@ -180,7 +180,7 @@ const handleDetails = (company: any) => {
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
-              placeholder="Search company"
+              placeholder="Pretraži Partnere"
               value={search}
               onChangeText={setSearch}
               placeholderTextColor="#888"
@@ -190,14 +190,14 @@ const handleDetails = (company: any) => {
             style={styles.addButton}
             onPress={() => setShowAddModal(true)}
           >
-            <Text style={styles.addButtonText}>Add partner</Text>
+            <Text style={styles.addButtonText}>Dodaj partnera</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.contentArea}>
           <ScrollView>
             {filteredCompanies.length === 0 && (
-              <Text style={styles.noResults}>No results.</Text>
+              <Text style={styles.noResults}>Nema rezultata.</Text>
             )}
             {filteredCompanies.map((company) => (
               <View key={company.id} style={styles.companyRow}>
@@ -237,34 +237,34 @@ const handleDetails = (company: any) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Company</Text>
+              <Text style={styles.modalTitle}>Dodaj Partnera</Text>
               <Pressable onPress={() => setShowAddModal(false)}>
                 <Text style={styles.closeButton}>&times;</Text>
               </Pressable>
             </View>
             <View style={styles.modalBody}>
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Legal name:</Text>
+                <Text style={styles.formLabel}>Legalno ime:</Text>
                 <TextInput
                   style={styles.formInput}
                   value={newCompanyLegalName}
                   onChangeText={setNewCompanyLegalName}
-                  placeholder="Enter legal name"
+                  placeholder="Upiši legalno ime"
                   placeholderTextColor="#888"
                 />
               </View>
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Brand name:</Text>
+                <Text style={styles.formLabel}>Ime Brenda:</Text>
                 <TextInput
                   style={styles.formInput}
                   value={newCompanyBrandName}
                   onChangeText={setNewCompanyBrandName}
-                  placeholder="Enter brand name"
+                  placeholder="Upiši ime Brenda"
                   placeholderTextColor="#888"
                 />
               </View>
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Projects (comma-separated):</Text>
+                <Text style={styles.formLabel}>Projekti (comma-separated):</Text>
                 <TextInput
                   style={styles.formInput}
                   value={newCompanyProjects}
@@ -274,7 +274,7 @@ const handleDetails = (company: any) => {
                 />
               </View>
               <View style={styles.formGroupRow}>
-                <Text style={styles.formLabel}>Blacklisted:</Text>
+                <Text style={styles.formLabel}>Crna lista:</Text>
                 <Switch
                   value={newCompanyBlacklisted}
                   onValueChange={setNewCompanyBlacklisted}
@@ -286,10 +286,10 @@ const handleDetails = (company: any) => {
                 style={[styles.button, styles.buttonSecondary]}
                 onPress={() => setShowAddModal(false)}
               >
-                <Text style={styles.buttonSecondaryText}>Cancel</Text>
+                <Text style={styles.buttonSecondaryText}>Odustani</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.button} onPress={addCompany}>
-                <Text style={styles.buttonText}>Add</Text>
+                <Text style={styles.buttonText}>Dodaj</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -304,14 +304,14 @@ const handleDetails = (company: any) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Legal Name</Text>
+              <Text style={styles.modalTitle}>Uredi Legalno ime</Text>
               <Pressable onPress={() => setEditModal(false)}>
                 <Text style={styles.closeButton}>&times;</Text>
               </Pressable>
             </View>
             <View style={styles.modalBody}>
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Legal name:</Text>
+                <Text style={styles.formLabel}>Legalno ime:</Text>
                 <TextInput
                   style={styles.formInput}
                   value={editLegalName}
@@ -329,18 +329,18 @@ const handleDetails = (company: any) => {
                   setDeleteModal(true);
                 }}
               >
-                <Text style={styles.deleteButtonText}>Delete</Text>
+                <Text style={styles.deleteButtonText}>Obriši</Text>
               </TouchableOpacity>
               {/* Cancel Button (center) */}
               <TouchableOpacity
                 style={[styles.button, styles.buttonSecondary]}
                 onPress={() => setEditModal(false)}
               >
-                <Text style={styles.buttonSecondaryText}>Cancel</Text>
+                <Text style={styles.buttonSecondaryText}>Odustani</Text>
               </TouchableOpacity>
               {/* Save Button (right) */}
               <TouchableOpacity style={styles.button} onPress={saveEdit}>
-                <Text style={styles.buttonText}>Save </Text>
+                <Text style={styles.buttonText}>Spremi</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -352,14 +352,14 @@ const handleDetails = (company: any) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Delete Company</Text>
+              <Text style={styles.modalTitle}>Obriši Partnera</Text>
               <Pressable onPress={() => setDeleteModal(false)}>
                 <Text style={styles.closeButton}>&times;</Text>
               </Pressable>
             </View>
             <View style={styles.modalBody}>
               <Text>
-                Are you sure you want to delete{' '}
+                Jesi li siguran da želiš obrisati{' '}
                 <Text style={{ fontWeight: 'bold' }}>
                   {selectedCompany?.legalName}
                 </Text>
@@ -371,10 +371,10 @@ const handleDetails = (company: any) => {
                 style={[styles.button, styles.buttonSecondary]}
                 onPress={() => setDeleteModal(false)}
               >
-                <Text style={styles.buttonSecondaryText}>Cancel</Text>
+                <Text style={styles.buttonSecondaryText}>Odustani</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.button} onPress={confirmDelete}>
-                <Text style={styles.buttonText}>Delete</Text>
+                <Text style={styles.buttonText}>Obriši</Text>
               </TouchableOpacity>
             </View>
           </View>
