@@ -209,7 +209,7 @@ const DetailsPage = () => {
             disabled={notesPage === 1}
             onPress={() => setNotesPage(notesPage - 1)}
           >
-            <Text style={styles.pageButtonText}>Prev</Text>
+            <Text style={styles.pageButtonText}>Prethodna</Text>
           </TouchableOpacity>
           <Text style={{ marginHorizontal: 16, alignSelf: 'center' }}>
             {notesPage} / {totalPages}
@@ -219,7 +219,7 @@ const DetailsPage = () => {
             disabled={notesPage === totalPages}
             onPress={() => setNotesPage(notesPage + 1)}
           >
-            <Text style={styles.pageButtonText}>Next</Text>
+            <Text style={styles.pageButtonText}>Sljedeće</Text>
           </TouchableOpacity>
         </View>
       )}
