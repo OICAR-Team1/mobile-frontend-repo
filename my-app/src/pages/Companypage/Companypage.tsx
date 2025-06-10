@@ -1,191 +1,204 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Switch,
+  ActivityIndicator,
+  StyleSheet,
   Modal,
   Pressable,
-  Switch,
 } from 'react-native';
 import styles from './Companypage.styles';
 import NavBar from '../Components/NavBar';
-
-// --- MOCK DATA ---
-const initialCompanies = [
-  {
-    id: 1,
-    legalName: 'ABC Technology Ltd.',
-    brandName: 'TechPro',
-    projects: ['Website Redesign', 'Mobile App'],
-    blacklisted: false,
-    contacts: [
-      {
-        name: 'John Smith',
-        email: 'john.smith@techpro.com',
-        phone: '+385 91 123 4567',
-        position: 'Project Manager',
-      },
-      {
-        name: 'Ana Novak',
-        email: 'ana.novak@techpro.com',
-        phone: '+385 91 555 1234',
-        position: 'Lead Developer',
-      },
-     
-    ],
-    notes: [
-      { year: '2023', project: 'Website Redesign', text: 'Great client, fast feedback.' },
-      { year: '2023', project: 'Mobile App', text: 'Requested extra features.' },
-      { year: '2024', project: 'Mobile App', text: 'Repeat business, satisfied.' },
-      { year: '2024', project: 'Mobile App', text: 'Paid on time.' },
-      { year: '2024', project: 'Mobile App', text: 'Paid on time.' },
-      { year: '2024', project: 'Mobile App', text: 'Paid on time.' },
-    ],
-  },
-  {
-    id: 2,
-    legalName: 'Global Marketing Group',
-    brandName: 'GMG Digital',
-    projects: ['SEO Campaign'],
-    blacklisted: false,
-     contacts: [
-      {
-        name: 'Ivan Horvat',
-        email: 'ivan.horvat@gmg.com',
-        phone: '+385 91 222 3333',
-        position: 'Marketing Director',
-      },
-    ],
-  },
-  {
-    id: 3,
-    legalName: 'Nexus Innovations Inc.',
-    brandName: 'Nexus',
-    projects: ['Database Migration', 'Cloud Integration', 'API Development'],
-    blacklisted: true,
-    contacts: [
-      {
-        name: 'Petra Kovačić',
-        email: 'petra.kovacic@nexus.com',
-        phone: '+385 91 987 6543',
-        position: 'CTO',
-      },
-      {
-        name: 'Marko Babić',
-        email: 'marko.babic@nexus.com',
-        phone: '+385 91 654 3210',
-        position: 'System Architect',
-      },
-    ],
-  },
-];
+import { ePartnerService, projectService } from '../../services/api.service';
 
 
-
-export default function CompanyPage({ navigation }) {
-  const [companies, setCompanies] = useState(initialCompanies);
+export default function CompanyPage({ navigation, onLogout }) {
+  const [companies, setCompanies] = useState([]);
   const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Modal states and form states (add/edit/delete)
   const [editModal, setEditModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState<any>(null);
+  const [selectedCompany, setSelectedCompany] = useState(null);
   const [editLegalName, setEditLegalName] = useState('');
   const [newCompanyLegalName, setNewCompanyLegalName] = useState('');
   const [newCompanyBrandName, setNewCompanyBrandName] = useState('');
   const [newCompanyProjects, setNewCompanyProjects] = useState('');
   const [newCompanyBlacklisted, setNewCompanyBlacklisted] = useState(false);
-  const [detailsModal, setDetailsModal] = useState(false);
- 
 
-  const filteredCompanies = companies.filter((c) =>
-    c.legalName.toLowerCase().includes(search.toLowerCase()) ||
-    c.brandName.toLowerCase().includes(search.toLowerCase())
+// Fetch companies and projects from API
+  const fetchCompanies = async () => {
+    try {
+      setLoading(true);
+      const [partnersData, projectsData] = await Promise.all([
+        ePartnerService.getAllPartners(),
+        projectService.getAllProjects(),
+      ]);
+
+      // Map projects by partner ID
+      const partnerProjects = {};
+      projectsData.forEach((project) => {
+        if (!partnerProjects[project.ePartnerId]) {
+          partnerProjects[project.ePartnerId] = [];
+        }
+        partnerProjects[project.ePartnerId].push(project.name);
+      });
+
+      // Process partners with their projects
+      const processedPartners = partnersData.map((partner) => ({
+        id: partner.id,
+        legalName: partner.name,
+        brandName: partner.oib,
+        address: partner.address,
+        blacklisted: partner.blacklist,
+        projects: partnerProjects[partner.id] || [],
+        contacts: partner.contacts || [],
+        notes: partner.notes || [],
+      }));
+
+      setCompanies(processedPartners);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError('Failed to load partners and projects. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  // Filter companies by search term
+  const filteredCompanies = companies.filter(
+    (c) =>
+      c.legalName.toLowerCase().includes(search.toLowerCase()) ||
+      c.brandName.toLowerCase().includes(search.toLowerCase())
   );
 
-  
-  const handleEdit = (company: any) => {
+  // --- CRUD Handlers using API ---
+
+  // Add Company
+  const addCompany = async () => {
+    if (newCompanyLegalName.trim() && newCompanyBrandName.trim()) {
+      try {
+        setLoading(true);
+        await ePartnerService.createPartner({
+          name: newCompanyLegalName,
+          oib: newCompanyBrandName,
+          blacklist: newCompanyBlacklisted,
+          address: '', // Add other fields as needed
+        });
+        setShowAddModal(false);
+        setNewCompanyLegalName('');
+        setNewCompanyBrandName('');
+        setNewCompanyProjects('');
+        setNewCompanyBlacklisted(false);
+        await fetchCompanies();
+      } catch (err) {
+        setError('Greška prilikom dodavanja partnera.');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  // Edit Company
+  const saveEdit = async () => {
+    if (!selectedCompany) return;
+    try {
+      setLoading(true);
+      await ePartnerService.updatePartner(selectedCompany.id, {
+        name: editLegalName,
+        oib: selectedCompany.brandName,
+        blacklist: selectedCompany.blacklisted,
+        address: selectedCompany.address,
+      });
+      setEditModal(false);
+      setSelectedCompany(null);
+      await fetchCompanies();
+    } catch (err) {
+      setError('Greška prilikom uređivanja partnera.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Delete Company
+  const confirmDelete = async () => {
+    if (!selectedCompany) return;
+    try {
+      setLoading(true);
+      await ePartnerService.deletePartner(selectedCompany.id);
+      setDeleteModal(false);
+      setSelectedCompany(null);
+      await fetchCompanies();
+    } catch (err) {
+      setError('Greška prilikom brisanja partnera.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Toggle Blacklist (optional: connect to API)
+  const toggleBlacklist = async (id) => {
+    const company = companies.find((c) => c.id === id);
+    if (!company) return;
+    try {
+      setLoading(true);
+      await ePartnerService.updatePartner(id, {
+        name: company.legalName,
+        oib: company.brandName,
+        blacklist: !company.blacklisted,
+        address: company.address,
+      });
+      await fetchCompanies();
+    } catch (err) {
+      setError('Greška prilikom ažuriranja crne liste.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Modal handlers
+  const handleEdit = (company) => {
     setSelectedCompany(company);
     setEditLegalName(company.legalName);
     setEditModal(true);
   };
 
-
-  const handleDelete = (company: any) => {
+  const handleDelete = (company) => {
     setSelectedCompany(company);
     setDeleteModal(true);
   };
 
-const handleDetails = (company: any) => {
-  navigation.navigate('Details', { company });
-};
-
-  const saveEdit = () => {
-    setCompanies((prev) =>
-      prev.map((c) =>
-        c.id === selectedCompany.id ? { ...c, legalName: editLegalName } : c
-      )
-    );
-    setEditModal(false);
-    setSelectedCompany(null);
+  const handleDetails = (company) => {
+    navigation.navigate('Details', { company });
   };
 
-  const confirmDelete = () => {
-    setCompanies((prev) => prev.filter((c) => c.id !== selectedCompany.id));
-    setDeleteModal(false);
-    setSelectedCompany(null);
-  };
-
-  const addCompany = () => {
-    if (newCompanyLegalName.trim() && newCompanyBrandName.trim()) {
-      setCompanies([
-        ...companies,
-        {
-          id: Date.now(),
-          legalName: newCompanyLegalName,
-          brandName: newCompanyBrandName,
-          projects: newCompanyProjects
-            ? newCompanyProjects.split(',').map((p) => p.trim())
-            : [],
-          blacklisted: newCompanyBlacklisted,
-          contacts: [], 
-   
-        },
-      ]);
-      setNewCompanyLegalName('');
-      setNewCompanyBrandName('');
-      setNewCompanyProjects('');
-      setNewCompanyBlacklisted(false);
-      setShowAddModal(false);
-    }
-  };
-
-  const toggleBlacklist = (id: number) => {
-    setCompanies((prev) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, blacklisted: !c.blacklisted } : c
-      )
-    );
-  };
+  
 
   return (
     <View style={styles.appContainer}>
-      <NavBar currentScreen="Company" navigation={navigation} />
+      <NavBar currentScreen="Company" navigation={navigation} onLogout={onLogout} />
 
-      {/* Main Content */}
       <View style={styles.mainContent}>
         <View style={styles.actionBar}>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Pretraži Partnere"
-              value={search}
-              onChangeText={setSearch}
-              placeholderTextColor="#888"
-            />
-          </View>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Pretraži Partnere"
+            value={search}
+            onChangeText={setSearch}
+            placeholderTextColor="#888"
+          />
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => setShowAddModal(true)}
@@ -195,187 +208,150 @@ const handleDetails = (company: any) => {
         </View>
 
         <View style={styles.contentArea}>
-          <ScrollView>
-            {filteredCompanies.length === 0 && (
-              <Text style={styles.noResults}>Nema rezultata.</Text>
-            )}
-            {filteredCompanies.map((company) => (
-              <View key={company.id} style={styles.companyRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.legalName}>{company.legalName}</Text>
-                  <Text style={styles.brandName}>{company.brandName}</Text>
-                  <Text style={styles.projects}>
-                    {company.projects.join(', ')}
-                  </Text>
+          {loading ? (
+            <ActivityIndicator size="large" style={{ marginTop: 30 }} />
+          ) : error ? (
+            <Text style={{ color: 'red', textAlign: 'center', marginTop: 30 }}>
+              {error}
+            </Text>
+          ) : filteredCompanies.length === 0 ? (
+            <Text style={styles.noResults}>Nema rezultata.</Text>
+          ) : (
+            <ScrollView>
+              {filteredCompanies.map((company) => (
+                <View key={company.id} style={styles.companyRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.legalName}>{company.legalName}</Text>
+                    <Text style={styles.brandName}>{company.brandName}</Text>
+                    <Text style={styles.projects}>
+                      {company.projects.join(', ')}
+                    </Text>
+                  </View>
+                  <View style={styles.rowActions}>
+                    <Switch
+                      value={company.blacklisted}
+                      onValueChange={() => toggleBlacklist(company.id)}
+                    />
+                    <TouchableOpacity
+                      style={styles.actionIcon}
+                      onPress={() => handleDetails(company)}
+                    >
+                      <Text style={styles.actionIconText}>📋</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.actionIcon}
+                      onPress={() => handleEdit(company)}
+                    >
+                      <Text style={styles.actionIconText}>✏️</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.actionIcon}
+                      onPress={() => handleDelete(company)}
+                    >
+                      <Text style={styles.actionIconText}>🗑️</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <View style={styles.rowActions}>
-                  <Switch
-                    value={company.blacklisted}
-                    onValueChange={() => toggleBlacklist(company.id)}
-                  />
-                  <TouchableOpacity
-                    style={styles.actionIcon}
-                    onPress={() => handleDetails(company)}
-                  >
-                    <Text style={styles.actionIconText}>📋</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.actionIcon}
-                    onPress={() => handleEdit(company)}
-                  >
-                    <Text style={styles.actionIconText}>✏️</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
-          </ScrollView>
+              ))}
+            </ScrollView>
+          )}
         </View>
       </View>
 
       {/* Add Modal */}
-      <Modal visible={showAddModal} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
+      <Modal visible={showAddModal} transparent animationType="slide">
+        <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Dodaj Partnera</Text>
-              <Pressable onPress={() => setShowAddModal(false)}>
-                <Text style={styles.closeButton}>&times;</Text>
-              </Pressable>
+            <Text style={styles.modalTitle}>Dodaj partnera</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Naziv"
+              value={newCompanyLegalName}
+              onChangeText={setNewCompanyLegalName}
+            />
+            <TextInput
+              style={styles.modalInput}
+              placeholder="OIB"
+              value={newCompanyBrandName}
+              onChangeText={setNewCompanyBrandName}
+            />
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Projekti (odvojeni zarezom)"
+              value={newCompanyProjects}
+              onChangeText={setNewCompanyProjects}
+            />
+            <View style={styles.switchRow}>
+              <Text>Blacklist:</Text>
+              <Switch
+                value={newCompanyBlacklisted}
+                onValueChange={setNewCompanyBlacklisted}
+              />
             </View>
-            <View style={styles.modalBody}>
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Legalno ime:</Text>
-                <TextInput
-                  style={styles.formInput}
-                  value={newCompanyLegalName}
-                  onChangeText={setNewCompanyLegalName}
-                  placeholder="Upiši legalno ime"
-                  placeholderTextColor="#888"
-                />
-              </View>
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Ime Brenda:</Text>
-                <TextInput
-                  style={styles.formInput}
-                  value={newCompanyBrandName}
-                  onChangeText={setNewCompanyBrandName}
-                  placeholder="Upiši ime Brenda"
-                  placeholderTextColor="#888"
-                />
-              </View>
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Projekti (comma-separated):</Text>
-                <TextInput
-                  style={styles.formInput}
-                  value={newCompanyProjects}
-                  onChangeText={setNewCompanyProjects}
-                  placeholder="e.g. Website, Mobile App"
-                  placeholderTextColor="#888"
-                />
-              </View>
-              <View style={styles.formGroupRow}>
-                <Text style={styles.formLabel}>Crna lista:</Text>
-                <Switch
-                  value={newCompanyBlacklisted}
-                  onValueChange={setNewCompanyBlacklisted}
-                />
-              </View>
-            </View>
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={[styles.button, styles.buttonSecondary]}
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setShowAddModal(false)}
               >
-                <Text style={styles.buttonSecondaryText}>Odustani</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.button} onPress={addCompany}>
-                <Text style={styles.buttonText}>Dodaj</Text>
-              </TouchableOpacity>
+                <Text>Otkaži</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={addCompany}
+              >
+                <Text>Spremi</Text>
+              </Pressable>
             </View>
           </View>
         </View>
       </Modal>
 
-
-
-
       {/* Edit Modal */}
-      <Modal visible={editModal} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
+      <Modal visible={editModal} transparent animationType="slide">
+        <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Uredi Legalno ime</Text>
-              <Pressable onPress={() => setEditModal(false)}>
-                <Text style={styles.closeButton}>&times;</Text>
-              </Pressable>
-            </View>
-            <View style={styles.modalBody}>
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Legalno ime:</Text>
-                <TextInput
-                  style={styles.formInput}
-                  value={editLegalName}
-                  onChangeText={setEditLegalName}
-                  placeholder="Legal name"
-                  placeholderTextColor="#888"
-                />
-              </View>
-            </View>
-            <View style={styles.modalFooter}>
-             <TouchableOpacity
-                style={[styles.button, styles.deleteButton]}
-                onPress={() => {
-                  setEditModal(false);
-                  setDeleteModal(true);
-                }}
-              >
-                <Text style={styles.deleteButtonText}>Obriši</Text>
-              </TouchableOpacity>
-              {/* Cancel Button (center) */}
-              <TouchableOpacity
-                style={[styles.button, styles.buttonSecondary]}
+            <Text style={styles.modalTitle}>Uredi partnera</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={editLegalName}
+              onChangeText={setEditLegalName}
+            />
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setEditModal(false)}
               >
-                <Text style={styles.buttonSecondaryText}>Odustani</Text>
-              </TouchableOpacity>
-              {/* Save Button (right) */}
-              <TouchableOpacity style={styles.button} onPress={saveEdit}>
-                <Text style={styles.buttonText}>Spremi</Text>
-              </TouchableOpacity>
+                <Text>Otkaži</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={saveEdit}
+              >
+                <Text>Spremi</Text>
+              </Pressable>
             </View>
           </View>
         </View>
       </Modal>
 
       {/* Delete Modal */}
-      <Modal visible={deleteModal} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
+      <Modal visible={deleteModal} transparent animationType="slide">
+        <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Obriši Partnera</Text>
-              <Pressable onPress={() => setDeleteModal(false)}>
-                <Text style={styles.closeButton}>&times;</Text>
-              </Pressable>
-            </View>
-            <View style={styles.modalBody}>
-              <Text>
-                Jesi li siguran da želiš obrisati{' '}
-                <Text style={{ fontWeight: 'bold' }}>
-                  {selectedCompany?.legalName}
-                </Text>
-                ?
-              </Text>
-            </View>
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={[styles.button, styles.buttonSecondary]}
+            <Text style={styles.modalTitle}>Jeste li sigurni da želite obrisati partnera?</Text>
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setDeleteModal(false)}
               >
-                <Text style={styles.buttonSecondaryText}>Odustani</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.button} onPress={confirmDelete}>
-                <Text style={styles.buttonText}>Obriši</Text>
-              </TouchableOpacity>
+                <Text>Ne</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, styles.deleteButton]}
+                onPress={confirmDelete}
+              >
+                <Text>Da</Text>
+              </Pressable>
             </View>
           </View>
         </View>

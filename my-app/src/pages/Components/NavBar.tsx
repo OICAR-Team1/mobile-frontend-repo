@@ -6,9 +6,10 @@ import styles from './NavBar.styles';
 type NavBarProps = {
   currentScreen: 'Company' | 'Projects';
   navigation: any;
+   onLogout: () => void;
 };
 
-const NavBar: React.FC<NavBarProps> = ({ currentScreen, navigation }) => (
+const NavBar: React.FC<NavBarProps> = ({ currentScreen, navigation, onLogout }) => (
   <View style={styles.topNav}>
    
     <View style={styles.navRight}>
@@ -21,6 +22,12 @@ const NavBar: React.FC<NavBarProps> = ({ currentScreen, navigation }) => (
         <Text style={styles.switchButtonText}>
           {currentScreen === 'Company' ? 'Idi na Projekte' : 'Idi na Partnere'}
         </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.logoutButton} 
+        onPress={onLogout}
+      >
+        <Text style={styles.logoutButtonText}>Log out</Text>
       </TouchableOpacity>
     </View>
   </View>
