@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    width: '100%',
+    width: '50%',
     color: '#333',
   },
   addButton: {
@@ -354,6 +354,61 @@ projectsButtonText: {
   fontWeight: 'bold',
   fontSize: 15,
 },
+saveButton: {
+  backgroundColor: '#c1272d',      // Red for save/primary action
+  borderRadius: 5,
+  paddingVertical: 10,
+  paddingHorizontal: 24,
+  alignItems: 'center',
+  marginLeft: 8,
+},
+cancelButton: {
+  backgroundColor: '#f5f5f5',      // Light gray for cancel/secondary
+  borderWidth: 1,
+  borderColor: '#eee',
+  borderRadius: 5,
+  paddingVertical: 10,
+  paddingHorizontal: 24,
+  alignItems: 'center',
+},
+modalButton: {
+  borderRadius: 5,
+  paddingVertical: 10,
+  paddingHorizontal: 24,
+  alignItems: 'center',
+  marginLeft: 8,
+},
+switchRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginBottom: 14,
+},
+modalInput: {
+  width: '100%',
+  padding: 10,
+  borderWidth: 1,
+  borderColor: '#ddd',
+  borderRadius: 4,
+  fontSize: 16,
+  color: '#333',
+  backgroundColor: '#fafafa',
+  marginBottom: 14,
+},
+modalContainer: {
+  flex: 1,
+  backgroundColor: 'rgba(0,0,0,0.4)',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+modalButtons: {
+  flexDirection: 'row',
+  justifyContent: 'flex-end',
+  gap: 12,
+  padding: 18,
+  borderTopWidth: 1,
+  borderTopColor: '#eee',
+},
+
 
 });
 export default styles;

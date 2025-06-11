@@ -8,7 +8,7 @@ import DetailsPage from './my-app/src/pages/Detailspage/Detailspage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Configure Google Sign-In
+
 GoogleSignin.configure({
   webClientId: '92671188893-299le3fdajnsdcema6ohp855mnqspu1t.apps.googleusercontent.com', 
   offlineAccess: true,
@@ -31,10 +31,17 @@ export default function App() {
   }, []);
 
   const handleLoginSuccess = async (userInfo: any) => {
-    await AsyncStorage.setItem('jwtToken', userInfo.idToken);
-    await AsyncStorage.setItem('userInfo', JSON.stringify(userInfo.user));
+     try {
+    console.log('userInfo:', userInfo);
+    console.log('handleLoginSuccess called with userInfo:', userInfo);
+    await AsyncStorage.setItem('jwtToken', userInfo.data.idToken);
+    await AsyncStorage.setItem('userInfo', JSON.stringify(userInfo.data.user));
     setUser(userInfo.user);
     setIsAuthenticated(true);
+    console.log('isAuthenticated should now be true');
+  } catch (error) {
+    console.error('Error in handleLoginSuccess:', error);
+  }
   };
 
   const handleLogout = async () => {

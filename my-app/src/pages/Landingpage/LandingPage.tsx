@@ -14,6 +14,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
       const userInfo = await GoogleSignin.signIn();
       onLoginSuccess(userInfo);
     } catch (error: any) {
+      console.error('Google Sign-In error:', error);
       Alert.alert('Login failed', error.message);
     }
   };

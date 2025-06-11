@@ -1,33 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  View,
+    View,
   Text,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
   ScrollView,
   Modal,
   Pressable,
+  ActivityIndicator,
 } from 'react-native';
 import styles from './Projectpage.styles';
 import NavBar from '../Components/NavBar';
-
-// --- MOCK DATA ---
-const mockUser = { name: 'Ana' };
-
-const initialProjects = [
-  { id: 1, projectname: 'DEVELOP' },
-  { id: 2, projectname: 'PW' },
-  { id: 3, projectname: 'CSD' },
-  { id: 4, projectname: 'Marketing App' },
-  { id: 5, projectname: 'E-Learning Platform' },
-  { id: 6, projectname: 'Mobile Wallet' },
-];
+import { projectService } from '../../services/api.service';
 
 
-
-export default function ProjectsPage({ navigation }) {
-  const [projects, setProjects] = useState(initialProjects);
+export default function ProjectsPage({ navigation, onLogout }) {
+  const [projects, setProjects] = useState([]);
   const [search, setSearch] = useState('');
   const [editModal, setEditModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
@@ -35,13 +23,87 @@ export default function ProjectsPage({ navigation }) {
   const [editName, setEditName] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+   // Fetch projects from API
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      const data = await projectService.getAllProjects();
+      // Normalize to {id, projectname}
+      const normalized = data.map((p: any) => ({
+        id: p.id,
+        projectname: p.name || p.projectname,
+      }));
+      setProjects(normalized);
+      setError(null);
+    } catch (err) {
+      setError('Greška prilikom dohvaćanja projekata.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
   // Filtering
   const filteredProjects = projects.filter((p) =>
     p.projectname.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Handlers
+  // Add Project (API)
+  const addProject = async () => {
+    if (newProjectName.trim()) {
+      try {
+        setLoading(true);
+        await projectService.createProject({ name: newProjectName });
+        setShowAddModal(false);
+        setNewProjectName('');
+        await fetchProjects();
+      } catch (err) {
+        setError('Greška prilikom dodavanja projekta.');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  // Edit Project (API)
+  const saveEdit = async () => {
+    if (!selectedProject) return;
+    try {
+      setLoading(true);
+      await projectService.updateProject(selectedProject.id, { name: editName });
+      setEditModal(false);
+      setSelectedProject(null);
+      await fetchProjects();
+    } catch (err) {
+      setError('Greška prilikom uređivanja projekta.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Delete Project (API)
+  const confirmDelete = async () => {
+    if (!selectedProject) return;
+    try {
+      setLoading(true);
+      await projectService.deleteProject(selectedProject.id);
+      setDeleteModal(false);
+      setSelectedProject(null);
+      await fetchProjects();
+    } catch (err) {
+      setError('Greška prilikom brisanja projekta.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Modal handlers
   const handleEdit = (project: any) => {
     setSelectedProject(project);
     setEditName(project.projectname);
@@ -53,26 +115,11 @@ export default function ProjectsPage({ navigation }) {
     setDeleteModal(true);
   };
 
-  const saveEdit = () => {
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === selectedProject.id ? { ...p, projectname: editName } : p
-      )
-    );
-    setEditModal(false);
-    setSelectedProject(null);
-  };
-
-  const confirmDelete = () => {
-    setProjects((prev) => prev.filter((p) => p.id !== selectedProject.id));
-    setDeleteModal(false);
-    setSelectedProject(null);
-  };
 
   return (
-    <View style={styles.appContainer}>
+   <View style={styles.appContainer}>
       {/* Top Navigation Bar */}
-     <NavBar currentScreen="Projects" navigation={navigation} />
+      <NavBar currentScreen="Projects" navigation={navigation} onLogout={onLogout} />
 
       {/* Main Content */}
       <View style={styles.mainContent}>
@@ -95,30 +142,36 @@ export default function ProjectsPage({ navigation }) {
         </View>
 
         <View style={styles.contentArea}>
-          <ScrollView>
-            {filteredProjects.length === 0 && (
-              <Text style={styles.noResults}>Nema rezultata.</Text>
-            )}
-            {filteredProjects.map((project) => (
-              <View key={project.id} style={styles.projectRow}>
-                <Text style={styles.projectName}>{project.projectname}</Text>
-                <View style={styles.rowActions}>
-                  <TouchableOpacity
-                    style={styles.actionIcon}
-                    onPress={() => handleEdit(project)}
-                  >
-                    <Text style={styles.actionIconText}>✏️</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.actionIcon}
-                    onPress={() => handleDelete(project)}
-                  >
-                    <Text style={styles.actionIconText}>🗑️</Text>
-                  </TouchableOpacity>
+          {loading ? (
+            <ActivityIndicator size="large" style={{ marginTop: 30 }} />
+          ) : error ? (
+            <Text style={{ color: 'red', textAlign: 'center', marginTop: 30 }}>{error}</Text>
+          ) : (
+            <ScrollView>
+              {filteredProjects.length === 0 && (
+                <Text style={styles.noResults}>Nema rezultata.</Text>
+              )}
+              {filteredProjects.map((project) => (
+                <View key={project.id} style={styles.projectRow}>
+                  <Text style={styles.projectName}>{project.projectname}</Text>
+                  <View style={styles.rowActions}>
+                    <TouchableOpacity
+                      style={styles.actionIcon}
+                      onPress={() => handleEdit(project)}
+                    >
+                      <Text style={styles.actionIconText}>✏️</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.actionIcon}
+                      onPress={() => handleDelete(project)}
+                    >
+                      <Text style={styles.actionIconText}>🗑️</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
-            ))}
-          </ScrollView>
+              ))}
+            </ScrollView>
+          )}
         </View>
       </View>
 
@@ -153,16 +206,7 @@ export default function ProjectsPage({ navigation }) {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.button}
-                onPress={() => {
-                  if (newProjectName.trim()) {
-                    setProjects([
-                      ...projects,
-                      { id: Date.now(), projectname: newProjectName },
-                    ]);
-                    setNewProjectName('');
-                    setShowAddModal(false);
-                  }
-                }}
+                onPress={addProject}
               >
                 <Text style={styles.buttonText}>Dodaj</Text>
               </TouchableOpacity>
