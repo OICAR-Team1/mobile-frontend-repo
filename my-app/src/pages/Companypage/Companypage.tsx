@@ -14,10 +14,11 @@ import {
 import styles from './Companypage.styles';
 import NavBar from '../Components/NavBar';
 import { ePartnerService, projectService } from '../../services/api.service';
-
+import { Picker } from '@react-native-picker/picker';
 
 export default function CompanyPage({ navigation, onLogout }) {
   const [companies, setCompanies] = useState([]);
+   const [projects, setProjects] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,9 +30,11 @@ export default function CompanyPage({ navigation, onLogout }) {
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [editLegalName, setEditLegalName] = useState('');
   const [newCompanyLegalName, setNewCompanyLegalName] = useState('');
+  const [newCompanyAddress, setNewCompanyAddress] = useState('');
   const [newCompanyBrandName, setNewCompanyBrandName] = useState('');
   const [newCompanyProjects, setNewCompanyProjects] = useState('');
   const [newCompanyBlacklisted, setNewCompanyBlacklisted] = useState(false);
+ const [newCompanyProjectId, setNewCompanyProjectId] = useState('');
 
 // Fetch companies and projects from API
   const fetchCompanies = async () => {
@@ -41,32 +44,20 @@ export default function CompanyPage({ navigation, onLogout }) {
         ePartnerService.getAllPartners(),
         projectService.getAllProjects(),
       ]);
-
-      // Map projects by partner ID
-      const partnerProjects = {};
-      projectsData.forEach((project) => {
-        if (!partnerProjects[project.ePartnerId]) {
-          partnerProjects[project.ePartnerId] = [];
-        }
-        partnerProjects[project.ePartnerId].push(project.name);
-      });
-
-      // Process partners with their projects
       const processedPartners = partnersData.map((partner) => ({
         id: partner.id,
         legalName: partner.name,
         brandName: partner.oib,
         address: partner.address,
         blacklisted: partner.blacklist,
-        projects: partnerProjects[partner.id] || [],
+        projectIds: partner.projectIds || [],
         contacts: partner.contacts || [],
         notes: partner.notes || [],
       }));
-
       setCompanies(processedPartners);
+      setProjects(projectsData);
       setError(null);
     } catch (err) {
-      console.error('Error fetching data:', err);
       setError('Failed to load partners and projects. Please try again.');
     } finally {
       setLoading(false);
@@ -95,12 +86,14 @@ export default function CompanyPage({ navigation, onLogout }) {
           name: newCompanyLegalName,
           oib: newCompanyBrandName,
           blacklist: newCompanyBlacklisted,
-          address: '', // Add other fields as needed
+          address: newCompanyAddress,
+          projectIds: newCompanyProjectId ? [Number(newCompanyProjectId)] : [],
         });
         setShowAddModal(false);
         setNewCompanyLegalName('');
         setNewCompanyBrandName('');
-        setNewCompanyProjects('');
+        setNewCompanyProjectId('');
+        setNewCompanyAddress('');
         setNewCompanyBlacklisted(false);
         await fetchCompanies();
       } catch (err) {
@@ -111,16 +104,19 @@ export default function CompanyPage({ navigation, onLogout }) {
     }
   };
 
+
   // Edit Company
   const saveEdit = async () => {
     if (!selectedCompany) return;
     try {
       setLoading(true);
       await ePartnerService.updatePartner(selectedCompany.id, {
+        id: selectedCompany.id,
         name: editLegalName,
         oib: selectedCompany.brandName,
-        blacklist: selectedCompany.blacklisted,
         address: selectedCompany.address,
+        blacklist: selectedCompany.blacklisted,
+        projectIds: selectedCompany.projectIds || [],
       });
       setEditModal(false);
       setSelectedCompany(null);
@@ -184,7 +180,12 @@ export default function CompanyPage({ navigation, onLogout }) {
     navigation.navigate('Details', { company });
   };
 
-  
+  // Helper to get project names by IDs
+  const getProjectNames = (ids) =>
+    ids.map((id) => {
+      const proj = projects.find((p) => p.id === id);
+      return proj ? proj.name : `ID: ${id}`;
+    }).join(', ');
 
   return (
     <View style={styles.appContainer}>
@@ -224,13 +225,21 @@ export default function CompanyPage({ navigation, onLogout }) {
                     <Text style={styles.legalName}>{company.legalName}</Text>
                     <Text style={styles.brandName}>{company.brandName}</Text>
                     <Text style={styles.projects}>
-                      {company.projects.join(', ')}
+                      {company.projects}
                     </Text>
                   </View>
                   <View style={styles.rowActions}>
                     <Switch
                       value={company.blacklisted}
                       onValueChange={() => toggleBlacklist(company.id)}
+                     disabled={true}
+                     trackColor={{
+    false: '#ffaaaa', // custom color for OFF
+    true: '#008000',   // custom color for ON
+  }}
+  thumbColor={company.blacklisted ? '#008000' : '#ffaaaa'}
+  // You can also set a custom color for when disabled:
+  style={company.blacklisted ? { opacity: 0.7 } : { opacity: 0.5 }}
                     />
                     <TouchableOpacity
                       style={styles.actionIcon}
@@ -277,10 +286,20 @@ export default function CompanyPage({ navigation, onLogout }) {
             />
             <TextInput
               style={styles.modalInput}
-              placeholder="Projekti (odvojeni zarezom)"
-              value={newCompanyProjects}
-              onChangeText={setNewCompanyProjects}
+              placeholder="Adresa"
+              value={newCompanyAddress}
+              onChangeText={setNewCompanyAddress}
             />
+           <Picker
+              selectedValue={newCompanyProjectId}
+              style={styles.modalInput}
+              onValueChange={(itemValue) => setNewCompanyProjectId(itemValue)}
+            >
+              <Picker.Item label="Odaberi projekt" value="" />
+              {projects.map((project) => (
+                <Picker.Item key={project.id} label={project.name} value={String(project.id)} />
+              ))}
+            </Picker>
             <View style={styles.switchRow}>
               <Text>Blacklist:</Text>
               <Switch
