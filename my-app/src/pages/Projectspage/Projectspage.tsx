@@ -71,21 +71,23 @@ export default function ProjectsPage({ navigation, onLogout }) {
     }
   };
 
-  // Edit Project (API)
-  const saveEdit = async () => {
-    if (!selectedProject) return;
-    try {
-      setLoading(true);
-      await projectService.updateProject(selectedProject.id, { name: editName });
-      setEditModal(false);
-      setSelectedProject(null);
-      await fetchProjects();
-    } catch (err) {
-      setError('Greška prilikom uređivanja projekta.');
-    } finally {
-      setLoading(false);
-    }
-  };
+const saveEdit = async () => {
+  if (!selectedProject) return;
+  try {
+    setLoading(true);
+    await projectService.updateProject(selectedProject.id, {
+      id: selectedProject.id,
+      name: editName, // must be "name" as per backend, not "projectname"
+    });
+    setEditModal(false);
+    setSelectedProject(null);
+    await fetchProjects();
+  } catch (err) {
+    setError('Greška prilikom uređivanja projekta.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Delete Project (API)
   const confirmDelete = async () => {

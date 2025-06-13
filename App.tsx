@@ -8,7 +8,6 @@ import DetailsPage from './my-app/src/pages/Detailspage/Detailspage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
 GoogleSignin.configure({
   webClientId: '92671188893-299le3fdajnsdcema6ohp855mnqspu1t.apps.googleusercontent.com', 
   offlineAccess: true,
@@ -20,39 +19,56 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = await AsyncStorage.getItem('jwtToken');
-      const userInfo = await AsyncStorage.getItem('userInfo');
-      setIsAuthenticated(!!token);
-      setUser(userInfo ? JSON.parse(userInfo) : null);
-    };
-    checkAuth();
-  }, []);
+ useEffect(() => {
+  const checkAuth = async () => {
+    const token = await AsyncStorage.getItem('jwtToken');
+    const userInfo = await AsyncStorage.getItem('userInfo');
+    console.log('Read from AsyncStorage:', { token, userInfo });
+    setIsAuthenticated(!!token);
+    setUser(userInfo ? JSON.parse(userInfo) : null);
+  };
+  checkAuth();
+}, []);
 
-  const handleLoginSuccess = async (userInfo: any) => {
-     try {
-    console.log('userInfo:', userInfo);
-    console.log('handleLoginSuccess called with userInfo:', userInfo);
-    await AsyncStorage.setItem('jwtToken', userInfo.data.idToken);
-    await AsyncStorage.setItem('userInfo', JSON.stringify(userInfo.data.user));
-    setUser(userInfo.user);
+
+ const handleLoginSuccess = async (userInfo: any) => {
+  try {
+    // If userInfo is NOT nested under .data:
+    await AsyncStorage.setItem('jwtToken', userInfo.token);
+    await AsyncStorage.setItem('userId', String(userInfo.id));
+    if (userInfo.user) {
+      await AsyncStorage.setItem('userInfo', JSON.stringify(userInfo.user));
+      setUser(userInfo.user);
+    } else {
+      setUser(null);
+    }
     setIsAuthenticated(true);
     console.log('isAuthenticated should now be true');
   } catch (error) {
     console.error('Error in handleLoginSuccess:', error);
   }
-  };
+};
 
-  const handleLogout = async () => {
-    await AsyncStorage.removeItem('jwtToken');
-    await AsyncStorage.removeItem('userInfo');
-    setUser(null);
-    setIsAuthenticated(false);
-  };
+
+
+ const handleLogout = async () => {
+  await AsyncStorage.removeItem('jwtToken');
+  await AsyncStorage.removeItem('userId');
+  await AsyncStorage.removeItem('userInfo');
+  setUser(null);
+  setIsAuthenticated(false);
+
+// This signs out from Google and will prompt for account selection next time
+  try {
+    await GoogleSignin.signOut();
+  } catch (error) {
+    console.warn('Google sign-out error:', error);
+  }
+ 
+};
 
   return (
-    <NavigationContainer>
+     <NavigationContainer>
       {!isAuthenticated ? (
         <Stack.Navigator initialRouteName="Landing">
           <Stack.Screen name="Landing" options={{ headerShown: false }}>

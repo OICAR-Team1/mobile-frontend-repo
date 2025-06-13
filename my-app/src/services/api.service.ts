@@ -21,6 +21,7 @@ axios.interceptors.request.use(
     return config;
   },
   error => Promise.reject(error)
+
 );
 
 // Axios response interceptor for handling 401s
@@ -42,7 +43,7 @@ export const authService = {
     if (response.data.token) {
       await AsyncStorage.setItem('jwtToken', response.data.token);
       await AsyncStorage.setItem('userId', String(response.data.userId));
-      // Add more user info as needed
+     
     }
     return response.data;
   },
@@ -145,8 +146,8 @@ export const EActivityService = {
     const response = await axios.get(`/EActivity/Read/${id}`);
     return response.data;
   },
-  getActivityByPartnerId: async (partnerId: number) => {
-    const response = await axios.get(`/EActivity/ReadByPartnerId/${partnerId}`);
+  getActivityByPartnerId: async (ePartnerId: number) => {
+    const response = await axios.get(`/EActivity/ReadByPartnerId/${ePartnerId}`);
     return response.data;
   },
   createActivity: async (activityData: any) => {
@@ -157,10 +158,27 @@ export const EActivityService = {
     const response = await axios.put(`/EActivity/Update/${id}`, activityData);
     return response.data;
   },
-  deleteContact: async (id: number) => {
+  deleteActivity: async (id: number) => {
     const response = await axios.delete(`/EActivity/Delete/${id}`);
     return response.data;
   }
+
+
+};
+
+
+// User Service
+export const UserService = {
+  getAllUsers: async () => {
+    const response = await axios.get('/User');
+    return response.data;
+  },
+  getUserById: async (id: number) => {
+    const response = await axios.get(`/User/${id}`);
+    return response.data;
+  },
+  
+
 
 
 };
